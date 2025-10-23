@@ -508,8 +508,10 @@ UnityInterop::InteropPose CameraGetDesiredPose(int actor_index, int sensor_index
 }
 
 void SetSpawnObjectCallback(const char* (*spawn_object_unity)(
-    const char* object_name, const char* asset_path,
-    UnityInterop::InteropPose pose, UnityInterop::InteropVector3 scale)) {
+							const char* object_name, 
+							const char* asset_path,
+							UnityInterop::InteropPose pose, 
+							UnityInterop::InteropVector3 scale)) {
   if (simserver == nullptr) {
     // TODO Log warning
     return;
@@ -518,25 +520,101 @@ void SetSpawnObjectCallback(const char* (*spawn_object_unity)(
   std::function<const char*(const std::string&, const std::string&,
                             const projectairsim::Transform&,
                             const std::vector<float>&, bool)>
-      spawn_object_wrapper =
-          [spawn_object_unity](
-              const std::string& object_name, const std::string& asset_path,
-              const projectairsim::Transform& pose,
-              const std::vector<float>& scale, bool enable_physics) {
+		spawn_object_wrapper =
+			[spawn_object_unity](	const std::string& object_name, const std::string& asset_path,
+									const projectairsim::Transform& pose,
+									const std::vector<float>& scale, bool enable_physics) 
+		{
             return spawn_object_unity(
                 object_name.c_str(), asset_path.c_str(),
                 UnityInterop::InteropPose(pose),
                 UnityInterop::InteropVector3(scale[0], scale[1], scale[2]));
-          };
+        };
 
   auto& scene = simserver->GetScene();
-  auto spawn_object_method = projectairsim::ServiceMethod(
-      "SpawnObject",
-      {"object_name", "asset_path", "pose", "scale", "enable_physics"});
-  auto spawn_object_handler =
-      spawn_object_method.CreateMethodHandler(spawn_object_wrapper);
+  auto spawn_object_method = projectairsim::ServiceMethod("SpawnObject", {"object_name", "asset_path", "pose", "scale", "enable_physics"});
+  auto spawn_object_handler = spawn_object_method.CreateMethodHandler(spawn_object_wrapper);
   scene.RegisterServiceMethod(spawn_object_method, spawn_object_handler);
 }
+/*
+  auto spawn_object = projectairsim::ServiceMethod("SpawnObject",{"object_name", "asset_path", "pose", "scale", "enable_physics"});
+  auto spawn_object_handler = spawn_object.CreateMethodHandler(&WorldSimApi::spawnObject, *this);
+  sim_scene_->RegisterServiceMethod(spawn_object, spawn_object_handler);
+*/
+
+
+/*
+void SetSpawnObjectCallback(const char* (*spawn_object_unity)(const char* object_name, const char* asset_path, UnityInterop::InteropPose pose, UnityInterop::InteropVector3 scale)) {
+  if (simserver == nullptr) {
+    // TODO Log warning
+    return;
+  }
+
+  std::function<const char*(const std::string&, const std::string&, const projectairsim::Transform&, const std::vector<float>&, bool)>
+      spawn_object_wrapper =
+          [spawn_object_unity](const std::string& object_name, const std::string& asset_path, const projectairsim::Transform& pose, const std::vector<float>& scale, bool enable_physics) {
+				return spawn_object_unity(object_name.c_str(), asset_path.c_str(), UnityInterop::InteropPose(pose), UnityInterop::InteropVector3(scale[0], scale[1], scale[2]));
+          }
+
+  auto& scene = simserver->GetScene();
+  auto spawn_object_method = projectairsim::ServiceMethod("SpawnObject", {"object_name", "asset_path", "pose", "scale", "enable_physics"});
+  auto spawn_object_handler = spawn_object_method.CreateMethodHandler(spawn_object_wrapper);
+  scene.RegisterServiceMethod(spawn_object_method, spawn_object_handler);
+}
+*/
+
+
+
+
+void ImportNedTrajectoryCallback(const char* (*import_ned_trajectory_unity)(
+    const std::string& traj_name, const std::vector<float>& time,
+    const std::vector<float>& latitudes, const std::vector<float>& longitudes,
+    const std::vector<float>& altitudes, const std::vector<float>& pose_roll,
+    const std::vector<float>& pose_pitch, const std::vector<float>& pose_yaw,
+    const std::vector<float>& vel_x_lin, const std::vector<float>& vel_y_lin,
+    const std::vector<float>& vel_z_lin)) {
+  if (simserver == nullptr) {
+    // TODO Log warning
+    return;
+  }
+
+	std::function<const char*(const std::string&, const std::string&, const projectairsim::Transform&, const std::vector<float>&, bool)>
+    import_ned_trajectory_wrapper =
+        [import_ned_trajectory_unity](
+			const std::string& traj_name, const std::vector<float>& time,
+			const std::vector<float>& latitudes, const std::vector<float>& longitudes,
+			const std::vector<float>& altitudes, const std::vector<float>& pose_roll,
+			const std::vector<float>& pose_pitch, const std::vector<float>& pose_yaw,
+			const std::vector<float>& vel_x_lin, const std::vector<float>& vel_y_lin,
+			const std::vector<float>& vel_z_lin
+		) 
+		{
+			auto& scene = simserver->GetScene();
+			// we cannot have duplicate trajectory names
+			if (scene.GetTrajectoryPtrByName(traj_name) == nullptr) {
+				scene.AddNEDTrajectory(traj_name, time, pose_x, pose_y, pose_z,
+										pose_roll, pose_pitch, pose_yaw, vel_x_lin,
+										vel_y_lin, vel_z_lin);
+				return true;
+			}
+
+			/*UnrealLogger::Log(projectairsim::LogLevel::kWarning,
+								TEXT("'%hs' was not imported. A duplicate trajectory name "
+									 "already exists."),
+								traj_name.c_str());
+			*/
+			return false;
+		}
+
+auto& scene = simserver->GetScene();
+auto import_ned_trajectory_method = projectairsim::ServiceMethod("ImportNEDTrajectory", 
+	{"traj_name", "time", "pose_x", "pose_y", "pose_z", "pose_roll","pose_pitch", "pose_yaw", "vel_x_lin", "vel_y_lin", "vel_z_lin"});
+auto import_ned_trajectory_handler = spawn_object_method.CreateMethodHandler(import_ned_trajectory_wrapper);
+scene.RegisterServiceMethod(import_ned_trajectory_method, import_ned_trajectory_handler);
+}
+
+
+
 
 void SetSpawnObjectAtGeoCallback(const char* (*spawn_object_unity)(
     const char* object_name, const char* asset_path,

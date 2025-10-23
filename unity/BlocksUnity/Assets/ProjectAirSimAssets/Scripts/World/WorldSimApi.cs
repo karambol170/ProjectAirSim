@@ -60,7 +60,7 @@ namespace UnityProjectAirSim.World
             // Hook up callbacks
             PInvokeWrapper.SetSpawnObjectCallback(
                 Marshal.GetFunctionPointerForDelegate(SpawnObjectDelegateInstance));
-
+				
             PInvokeWrapper.SetSpawnObjectAtGeoCallback(
                 Marshal.GetFunctionPointerForDelegate(SpawnObjectAtGeoDelegateInstance));
 
