@@ -305,8 +305,21 @@ bool FastPhysicsBody::IsLandingCollision() {
 
   if (is_ground_normal && is_moving_downward) {
     is_grounded_ = true;
+	kinematics_.pose.position.y() += 5;
     return true;
   } else {
+	  
+	  //BAD COLLISION CODE HERE//-----------------------//-----------------------//-----------------------//BAD COLLISION CODE HERE//
+	  
+		kinematics_.pose.position += collision_info_.normal;
+		//kin_grounded.accels.linear = Vector3::Zero();
+		//kin_grounded.accels.angular = Vector3::Zero();
+		//kin_grounded.twist.linear = Vector3::Zero();
+		//kin_grounded.twist.angular = Vector3::Zero();
+	  
+	  //-----------------------//-----------------------//-----------------------//-----------------------//-----------------------//
+	  
+	  
     return false;
   }
 }
@@ -695,7 +708,7 @@ Kinematics FastPhysicsModel::CalcNextKinematicsWithCollision(
 
   kin_with_collision.pose.position =
       collision_info.position +
-      (collision_info.normal * collision_info.penetration_depth) +
+      (collision_info.normal * collision_info.penetration_depth * 10) +
       (kin_with_collision.twist.linear * dt_sec);
 
   kin_with_collision.pose.orientation = cur_kin.pose.orientation;
